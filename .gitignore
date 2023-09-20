@@ -1,0 +1,4 @@
+Pipfile.lock
+.venv/lib/*
+.venv/bin/*
+.venv/pyvenv.cfg
