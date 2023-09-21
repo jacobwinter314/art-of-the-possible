@@ -73,7 +73,7 @@ verify_script_prerequisites() {
 }
 
 # Set up any variables that we will need in the script.
-TEMP_FILE=$(mktemp /tmp/run_local.XXXXXXXXX)
+TEMP_FILE=$(mktemp /tmp/run_tests_local.XXXXXXXXX)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Set this for the script and any subprocesses so we keep the venv in the project.
@@ -85,7 +85,7 @@ save_current_directory
 verify_script_prerequisites
 
 # Change the directory into the script's directory, to make things consistent.
-cd $SCRIPT_DIR
+cd "$SCRIPT_DIR" || exit
 
 # If the Pipfile.lock is not found, use pipenv to create it and install any required packages.
 if [ ! -f "./Pipfile.lock" ]; then
@@ -99,11 +99,6 @@ if [ "./Pipfile" -nt "./Pipfile.lock" ]; then
 fi
 
 pipenv sync -d
-
-# pipenv run python simple_flask_server.py
-# coverage run -m 
- # --cov --cov-branch --cov-report xml:report/coverage.xml --cov-report html:report/coverage
- # --maxfail=5
 
 pipenv run pytest
 
