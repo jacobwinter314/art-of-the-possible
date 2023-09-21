@@ -17,15 +17,16 @@ complete_process() {
     fi
 
     if [ "$SCRIPT_RETURN_CODE" -ne 0 ]; then
-        echo "Local run of Flask server failed."
+        echo "Local run of Flask server tests failed."
     else
-        echo "Local run of Flask server succeeded."
+        echo "Local run of Flask server tests succeeded."
     fi
 
     if [ -f "$TEMP_FILE" ]; then
         rm "$TEMP_FILE"
     fi
 
+    # Restore the current directory.
     if [ "$DID_PUSHD" -eq 1 ]; then
         popd > /dev/null 2>&1 || exit
     fi
@@ -97,8 +98,13 @@ if [ "./Pipfile" -nt "./Pipfile.lock" ]; then
     pipenv lock
 fi
 
-pipenv sync
+pipenv sync -d
 
-pipenv run flask --app flask_server run --host 0.0.0.0 --port 5001
+# pipenv run python simple_flask_server.py
+# coverage run -m 
+ # --cov --cov-branch --cov-report xml:report/coverage.xml --cov-report html:report/coverage
+ # --maxfail=5
+
+pipenv run pytest
 
 complete_process 0 ""
