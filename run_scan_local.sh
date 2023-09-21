@@ -5,7 +5,7 @@
 set -uo pipefail
 
 start_process() {
-    echo "Initiating local run of Flask server..."
+    echo "Initiating project scan..."
 }
 
 complete_process() {
@@ -17,15 +17,16 @@ complete_process() {
     fi
 
     if [ "$SCRIPT_RETURN_CODE" -ne 0 ]; then
-        echo "Local run of Flask server failed."
+        echo "Local run of project scan failed."
     else
-        echo "Local run of Flask server succeeded."
+        echo "Local run of project scan succeeded."
     fi
 
     if [ -f "$TEMP_FILE" ]; then
         rm "$TEMP_FILE"
     fi
 
+    # Restore the current directory.
     if [ "$DID_PUSHD" -eq 1 ]; then
         popd > /dev/null 2>&1 || exit
     fi
@@ -72,7 +73,7 @@ verify_script_prerequisites() {
 }
 
 # Set up any variables that we will need in the script.
-TEMP_FILE=$(mktemp /tmp/run_local.XXXXXXXXX)
+TEMP_FILE=$(mktemp /tmp/run_scan_local.XXXXXXXXX)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Set this for the script and any subprocesses so we keep the venv in the project.
@@ -97,8 +98,9 @@ if [ "./Pipfile" -nt "./Pipfile.lock" ]; then
     pipenv lock
 fi
 
-pipenv sync
+pipenv sync -d
 
-pipenv run flask --app flask_server run --host 0.0.0.0 --port 5001
+pipenv run pre-commit run --all
 
 complete_process 0 ""
+
