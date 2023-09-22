@@ -1,0 +1,43 @@
+name: Main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  project-name: flask_server
+  default-python-version: 3.8
+
+jobs:
+
+  lint:
+
+    name: Project Quality Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@master
+
+      - name: Setup Python ${{ env.default-python-version }}
+        uses: actions/setup-python@v4.7.0
+        with:
+          python-version: ${{ env.default-python-version }}
+
+      - name: Install PipEnv
+        run: |
+          pip install pipenv==2022.1.8
+
+      - name: Sync With Repository
+        run: |
+          pipenv update -d
+          pipenv graph
+
+      - name: Execute Pre-Commit
+        run: |
+          pipenv run pre-commit run --all
