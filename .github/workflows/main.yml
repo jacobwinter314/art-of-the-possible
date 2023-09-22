@@ -43,21 +43,17 @@ jobs:
           pipenv run pre-commit run --all
 
     name: Tests
-    strategy:
-      matrix:
-        python: [${{ env.default-python-version }}]
-        platform: [ubuntu-latest]
-    runs-on: ${{ env.default-python-version }}
+    runs-on: ubuntu-latest
 
     steps:
 
       - name: Checkout Repository
         uses: actions/checkout@master
 
-      - name: Setup Python ${{ matrix.python }}
+      - name: Setup Python ${{ env.default-python-version }}
         uses: actions/setup-python@v4.7.0
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ env.default-python-version }}
 
       - name: Install PipEnv
         run: |
