@@ -43,7 +43,7 @@ jobs:
           pipenv run pre-commit run --all
 
   tests:
-  
+
     name: Tests
     runs-on: ubuntu-latest
 
@@ -65,7 +65,7 @@ jobs:
         run: |
           pipenv update -d
           pipenv graph
-          pipenv uninstall pytest-html
+          # pipenv uninstall pytest-html
 
       - name: Execute Tests
         run: pipenv run pytest --cov-fail-under=90 --cov --cov-branch
