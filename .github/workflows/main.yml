@@ -42,6 +42,8 @@ jobs:
         run: |
           pipenv run pre-commit run --all
 
+  tests:
+  
     name: Tests
     runs-on: ubuntu-latest
 
