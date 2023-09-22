@@ -41,3 +41,33 @@ jobs:
       - name: Execute Pre-Commit
         run: |
           pipenv run pre-commit run --all
+
+    name: Tests
+    strategy:
+      matrix:
+        python: [${{ env.default-python-version }}]
+        platform: [ubuntu-latest]
+    runs-on: ${{ env.default-python-version }}
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@master
+
+      - name: Setup Python ${{ matrix.python }}
+        uses: actions/setup-python@v4.7.0
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install PipEnv
+        run: |
+          pip install pipenv==2022.1.8
+
+      - name: Sync With Repository
+        run: |
+          pipenv update -d
+          pipenv graph
+          pipenv uninstall pytest-html
+
+      - name: Execute Tests
+        run: pipenv run pytest --cov-fail-under=90 --cov --cov-branch
