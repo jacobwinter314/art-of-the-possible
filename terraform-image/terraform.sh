@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash bash
 
 # Cribbed from
 # https://github.com/zenika-open-source/terraform-azure-cli/blob/master/dev.sh
@@ -74,16 +74,18 @@ build_secrets_script() {
     if [ -z "$TF_VAR_arm_subscription_id" ] ; then
         complete_process 1 "Environment variable 'TF_VAR_arm_subscription_id' is not set.  Please source ./terraform/init_tfvars.sh"
     fi
-    if [ -z "$TF_VAR_arm_subscription_id" ] ; then
+    if [ -z "$TF_VAR_arm_tenant_id" ] ; then
         complete_process 1 "Environment variable 'TF_VAR_arm_tenant_id' is not set.  Please source ./terraform/init_tfvars.sh"
     fi
 
-    echo "# !!! This is a temporary file.  This should never be committed to a repository!!!" > $TEMP_VARS_FILE
-    echo ""
-    echo "export ARM_CLIENT_ID=\"$TF_VAR_arm_client_id\" " >> $TEMP_VARS_FILE
-    echo "export ARM_CLIENT_SECRET=\"$TF_VAR_arm_client_secret\" "   >> $TEMP_VARS_FILE
-    echo "export ARM_TENANT_ID=\"$TF_VAR_arm_tenant_id\" " >> $TEMP_VARS_FILE
-    echo "export ARM_SUBSCRIPTION_ID=\"$TF_VAR_arm_subscription_id\" " >> $TEMP_VARS_FILE
+    {
+        echo "# !!! This is a temporary file.  This should never be committed to a repository!!!"
+        echo ""
+        echo "export ARM_CLIENT_ID=\"$TF_VAR_arm_client_id\" "
+        echo "export ARM_CLIENT_SECRET=\"$TF_VAR_arm_client_secret\" "
+        echo "export ARM_TENANT_ID=\"$TF_VAR_arm_tenant_id\" "
+        echo "export ARM_SUBSCRIPTION_ID=\"$TF_VAR_arm_subscription_id\" "
+    } >> $TEMP_VARS_FILE
     chmod +x $TEMP_VARS_FILE
 }
 
@@ -104,7 +106,7 @@ restore_current_directory
 
 build_secrets_script
 
-if docker run -it --rm -v $PWD:$PWD -w $PWD zenika/terraform-azure-cli:dev bash -c "source ./$TEMP_VARS_FILE ;  terraform $*" ; then
+if docker run -it --rm -v "$PWD:$PWD" -w "$PWD" zenika/terraform-azure-cli:dev bash -c "source ./$TEMP_VARS_FILE ;  terraform $*" ; then
     echo "Terraform command succeeded."
 else
     echo "Terraform command failed."

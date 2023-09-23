@@ -90,7 +90,7 @@ az ad sp create-for-rbac --name terraform-sp --role Contributor --scopes /subscr
 {
   "appId": "00000003-0003-0003-0003-000000000003",
   "displayName": "terraform-sp",
-  "password": "n8X8Q~VsdfsdfsfdDsUa7AqFGbdXuq2J6CQm3taVk",
+  "password": "string", # pragma: allowlist-secret
   "tenant": "00000001-0001-0001-0001-000000000001"
 }
 

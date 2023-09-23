@@ -1,5 +1,7 @@
+#!/usr/bin/bash bash
+
 # This file should only be sourced.
-# 
+#
 # This file should also NEVER be committed with any values present.
 
 if [ "${BASH_SOURCE[0]}" -ef "$0" ]

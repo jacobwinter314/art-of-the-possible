@@ -103,4 +103,3 @@ pipenv sync -d
 pipenv run pre-commit run --all
 
 complete_process 0 ""
-

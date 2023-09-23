@@ -1,3 +1,5 @@
+#!/usr/bin/bash bash
+
 ..//terraform-image/terraform.sh init
 if ../terraform-image/terraform.sh apply ; then
     echo "good"
