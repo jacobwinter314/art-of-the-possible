@@ -4,3 +4,11 @@ Pipfile.lock
 .venv/pyvenv.cfg
 report/*
 .coverage
+terraform/.terraform.lock.hcl
+terraform/.terraform/*
+terraform/terraform.tfstate.backup
+terraform/terraform.tfstate
+terraform/create-state/.terraform.lock.hcl
+terraform/create-state/terraform.tfstate
+terraform/create-state/terraform.tfstate.backup
+terraform/create-state/.terraform/*
