@@ -99,6 +99,6 @@ fi
 
 pipenv sync
 
-pipenv run flask --app flask_server run --host 0.0.0.0 --port 5001
+pipenv run flask --app flask_server run --host 0.0.0.0 --port 5000
 
 complete_process 0 ""

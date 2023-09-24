@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: art-of-the-possible
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: art-of-the-possible
+  template:
+    metadata:
+      labels:
+        app: art-of-the-possible
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: art-of-the-possible
+        image: ${host_name}/${image_name}:${image_tag}
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+        - containerPort: 5000

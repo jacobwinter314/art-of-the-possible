@@ -14,11 +14,12 @@ HEALTHCHECK --interval=2m --timeout=3s \
     CMD curl -f http://localhost:5000/health || exit 1
 
 COPY flask_server /app/flask_server
-RUN pipenv lock \
-    && pipenv sync \
-    && id \
+RUN id \
     && adduser --uid 1000 --system nonroot \
     && chown -R nonroot /app
 USER nonroot
 
-CMD ["flask","--app","flask_server","run","--host","0.0.0.0","--port","5000"]
+RUN pipenv lock \
+    && pipenv sync
+
+CMD ["pipenv", "run", "flask", "--app", "flask_server", "run", "--host", "0.0.0.0", "--port", "5000"]
