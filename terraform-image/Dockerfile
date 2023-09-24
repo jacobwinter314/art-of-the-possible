@@ -7,31 +7,33 @@ ARG DEBIAN_VERSION=bullseye-20220125-slim
 # Download Terraform binary
 FROM debian:${DEBIAN_VERSION} as terraform-cli
 ARG TERRAFORM_VERSION
-RUN apt-get update
-RUN apt-get install --no-install-recommends -y curl
-RUN apt-get install --no-install-recommends -y ca-certificates=20210119
-RUN apt-get install --no-install-recommends -y unzip
-RUN apt-get install --no-install-recommends -y gnupg
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y curl \
+    && apt-get install --no-install-recommends -y ca-certificates=20210119 \
+    && apt-get install --no-install-recommends -y unzip \
+    && apt-get install --no-install-recommends -y gnupg \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
-RUN curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS
-RUN curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-RUN curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS.sig
+RUN curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS \
+    && curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip \
+    && curl -Os https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_SHA256SUMS.sig
 COPY hashicorp.asc hashicorp.asc
-RUN gpg --import hashicorp.asc
-RUN gpg --verify terraform_${TERRAFORM_VERSION}_SHA256SUMS.sig terraform_${TERRAFORM_VERSION}_SHA256SUMS
+RUN gpg --import hashicorp.asc \
+    && gpg --verify terraform_${TERRAFORM_VERSION}_SHA256SUMS.sig terraform_${TERRAFORM_VERSION}_SHA256SUMS
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN grep terraform_${TERRAFORM_VERSION}_linux_amd64.zip terraform_${TERRAFORM_VERSION}_SHA256SUMS | sha256sum -c -
-RUN unzip -j terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+RUN grep terraform_${TERRAFORM_VERSION}_linux_amd64.zip terraform_${TERRAFORM_VERSION}_SHA256SUMS | sha256sum -c - \
+    && unzip -j terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
 # Install az CLI using PIP
 FROM debian:${DEBIAN_VERSION} as azure-cli
 ARG AZURE_CLI_VERSION
 ARG PYTHON_MAJOR_VERSION
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends python3=${PYTHON_MAJOR_VERSION}.2-3
-RUN apt-get install -y --no-install-recommends python3-pip
-RUN pip3 install --no-cache-dir setuptools==60.8.2
-RUN pip3 install --no-cache-dir azure-cli==${AZURE_CLI_VERSION}
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3=${PYTHON_MAJOR_VERSION}.2-3 \
+    && apt-get install -y --no-install-recommends python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir setuptools==60.8.2 \
+    && pip3 install --no-cache-dir azure-cli==${AZURE_CLI_VERSION}
 
 # Build final image
 FROM debian:${DEBIAN_VERSION}
