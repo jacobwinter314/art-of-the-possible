@@ -91,7 +91,7 @@ resource "azurerm_role_assignment" "acr_role" {
   principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
   skip_service_principal_aad_check = true
 }
-  
+
 output "acr_server_url" {
   description = "Url used to log in to the ACR with."
   value       = module.container-registry.acr_server_url
