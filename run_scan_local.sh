@@ -100,6 +100,8 @@ fi
 
 pipenv sync -d
 
+./terraform-image/terraform.sh fmt ./terraform
+
 pipenv run pre-commit run --all
 
 complete_process 0 ""

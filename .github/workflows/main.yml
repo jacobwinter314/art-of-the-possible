@@ -7,10 +7,17 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
+permissions:
+  contents: read
 env:
   project-name: flask_server
   default-python-version: 3.8
+  TERRAFORM_VERSION: 1.5.7
+  GITHUB_CONTAINER_REGISTRY: ghcr.io
+  BASE_IMAGE_NAME: art-of-the-possible
+  DOCKER_IMAGE_BASE_VERSION: 0.5.0
 
 jobs:
 
@@ -18,6 +25,9 @@ jobs:
 
     name: Project Quality Analysis
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
 
@@ -45,7 +55,11 @@ jobs:
   tests:
 
     name: Tests
+    needs: [lint]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
 
@@ -69,3 +83,211 @@ jobs:
 
       - name: Execute Tests
         run: pipenv run pytest --cov-fail-under=90 --cov --cov-branch
+
+  terraform:
+
+    name: 'Terraform'
+    needs: [lint]
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./terraform
+    outputs:
+      ACR_SERVER_NAME: ${{ steps.terraform-output.outputs.ACR_SERVER_NAME }}
+      ACR_USERID: ${{ steps.terraform-output.outputs.ACR_USERID }}
+      ACR_PASSWORD: ${{ steps.terraform-output.outputs.ACR_PASSWORD }}
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        id: format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "TERRAFORM_PLAN<<$EOF" >> "$GITHUB_ENV"
+          terraform plan -no-color -input=false >> "$GITHUB_ENV"
+          echo "$EOF" >> "$GITHUB_ENV"
+
+      - name: Check Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve -input=false
+
+      - name: Terraform Output
+        id: terraform-output
+        # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          ACR_SERVER_NAME=$(terraform output -raw acr_server_url)
+          ACR_USERID=$(terraform output -raw acr_client_id)
+          ACR_PASSWORD=$(terraform output -raw acr_client_secret)
+
+          echo "ACR_SERVER_NAME=${ACR_SERVER_NAME}" >> $GITHUB_ENV
+          echo "ACR_USERID=${ACR_USERID}" >> $GITHUB_ENV
+          echo "ACR_PASSWORD=${ACR_PASSWORD}" >> $GITHUB_ENV
+
+          # These should really be encoded. Otherwise, they will be visible in the target job.
+          echo "ACR_SERVER_NAME=${ACR_SERVER_NAME}" >> $GITHUB_OUTPUT
+          echo "ACR_USERID=${ACR_USERID}" >> $GITHUB_OUTPUT
+          echo "ACR_PASSWORD=${ACR_PASSWORD}" >> $GITHUB_OUTPUT
+
+  build-image:
+
+    needs: [terraform]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      ACR_SERVER_NAME: ${{ needs.terraform.outputs.ACR_SERVER_NAME }}
+      ACR_USERID: ${{ needs.terraform.outputs.ACR_USERID }}
+      ACR_PASSWORD: ${{ needs.terraform.outputs.ACR_PASSWORD }}
+    steps:
+
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v7
+        with:
+          root-reserve-mb: 30720  # https://github.com/easimon/maximize-build-space#caveats
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'false'
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set Docker Environment Variables
+        id: set-environment
+        run: |
+          IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}.${{ github.run_number }}
+          SEMVER_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}+${{ github.run_number }}
+
+          echo "DOCKER_IMAGE_NAME=${{ env.ACR_SERVER_NAME }}/${BASE_IMAGE_NAME}:$IMAGE_VERSION" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.12.0
+
+      # - name: Login to GitHub Container Registry
+      #   uses: docker/login-action@v2
+      #   with:
+      #     registry: ${{ env.GITHUB_CONTAINER_REGISTRY }}
+      #     username: ${{ secrets.DOCKER_CONTAINER_REGISTRY_USER }}
+      #     password: ${{ secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+
+      - name: Login To Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: '${{ env.ACR_SERVER_NAME }}'
+          username: ${{ env.ACR_USERID }}
+          password: ${{ env.ACR_PASSWORD }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          tags: ${{ env.DOCKER_IMAGE_NAME }}
+          push: true
+          file: ./Dockerfile
+
+      - name: Push Image to GitHub Container Registry
+        run: |
+          docker images
+
+          # IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}-${{ github.run_number }}
+          # echo "DOCKER_IMAGE_NAME=${{ env.GITHUB_CONTAINER_REGISTRY }}/${BASE_IMAGE_NAME}:$IMAGE_VERSION" >> $GITHUB_ENV
+
+          # docker push ${{ env.DOCKER_IMAGE_NAME }}
+
+  # integration-test-image:
+
+  #   needs: [build-image]
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   steps:
+
+  #     - name: Explain
+  #       run: |
+  #         echo "This would be a great place for some integration tests with the recently built docker image."
+
+  # deploy-to-acr:
+
+  #   needs: [integration-test-image, terraform]
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #   env:
+  #     ACR_SERVER_NAME: ${{ needs.terraform.outputs.ACR_SERVER_NAME }}
+  #     ACR_USERID: ${{ needs.terraform.outputs.ACR_SERVER_NAME }}
+  #     ACR_PASSWORD: ${{ needs.terraform.outputs.ACR_SERVER_NAME }}
+  #   steps:
+
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+  #     - name: Set GitHub Image Name
+  #       run: |
+  #         IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}-${{ github.run_number }}
+  #         echo "DOCKER_IMAGE_NAME=${{ env.GITHUB_CONTAINER_REGISTRY }}/${BASE_IMAGE_NAME}:$IMAGE_VERSION" >> $GITHUB_ENV
+
+  #     - name: Login to GitHub Container Registry
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: ${{ env.GITHUB_CONTAINER_REGISTRY }}
+  #         username: ${{ secrets.DOCKER_CONTAINER_REGISTRY_USER }}
+  #         password: ${{ secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+
+  #     - name: Pull Docker Image From GitHub Container Registry
+  #       run: |
+  #         docker pull ${{ env.DOCKER_IMAGE_NAME }}
+
+  #     - name: Login To Azure Container Registry
+  #       uses: azure/docker-login@v1
+  #       with:
+  #         login-server: '${{ env.ACR_SERVER_NAME }}'
+  #         username: ${{ env.ACR_USERID }}
+  #         password: ${{ env.ACR_PASSWORD }}
+
+  #     - name: Re-Tag and Push image to Azure Container Registry
+  #       run: |
+  #         IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}-${{ github.run_number }}
+  #         echo "DOCKER_IMAGE_NAME=${{ env.GITHUB_CONTAINER_REGISTRY }}/${BASE_IMAGE_NAME}:$IMAGE_VERSION" >> $GITHUB_ENV
+
+  #         docker tag ${{ env.DOCKER_IMAGE_NAME }} ${{ env.ACR_SERVER_NAME }}/${{ env.BASE_IMAGE_NAME }}:${IMAGE_VERSION}
+  #         docker push ${{ env.ACR_SERVER_NAME }}/${{ env.BASE_IMAGE_NAME }}:${IMAGE_VERSION}

@@ -17,9 +17,9 @@ locals {
   environment_name  = "dev"
   location  = "westus"
 
-  common_tags = {
-    Component   = "ArtOfThePossible"
-  }
+  # common_tags = {
+  #   Component   = "ArtOfThePossible"
+  # }
 }
 
 

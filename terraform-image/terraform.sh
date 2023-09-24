@@ -1,4 +1,4 @@
-#!/usr/bin/bash bash
+#!/usr/bin/bash
 
 # Cribbed from
 # https://github.com/zenika-open-source/terraform-azure-cli/blob/master/dev.sh
@@ -56,8 +56,8 @@ build_docker_image_if_required() {
     if docker images | grep "$IMAGE_NAME" > /dev/null 2>&1 ; then
         echo "Image already exists.  No building required." > /dev/null 2>&1
     else
-        echo "Image does not currently exist. Bulding..." > /dev/null 2>&1
-        if docker image build --build-arg AZURE_CLI_VERSION="$AZ_VERSION" --build-arg TERRAFORM_VERSION="$TF_VERSION" -t $IMAGE_NAME:$IMAGE_TAG . > "$TEMP_FILE" 2>&1 ; then
+        echo "Image does not currently exist. Bulding (this may take up to 5 minutes)..."
+        if ! docker image build --build-arg AZURE_CLI_VERSION="$AZ_VERSION" --build-arg TERRAFORM_VERSION="$TF_VERSION" -t $IMAGE_NAME:$IMAGE_TAG . ; then
             cat "$TEMP_FILE"
             complete_process 1 "Docker image '$IMAGE_NAME:$IMAGE_TAG' failed to build."
         fi

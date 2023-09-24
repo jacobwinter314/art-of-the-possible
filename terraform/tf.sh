@@ -1,4 +1,4 @@
-#!/usr/bin/bash bash
+#!/usr/bin/bash
 
 ..//terraform-image/terraform.sh init
 if ../terraform-image/terraform.sh apply ; then
