@@ -189,7 +189,7 @@ jobs:
       - name: Set Docker Environment Variables
         id: set-environment
         run: |
-          IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}-${{ github.run_number }}
+          IMAGE_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}.${{ github.run_number }}
           SEMVER_VERSION=${{ env.DOCKER_IMAGE_BASE_VERSION }}+${{ github.run_number }}
 
           echo "DOCKER_IMAGE_NAME=${{ env.GITHUB_CONTAINER_REGISTRY }}/${BASE_IMAGE_NAME}:$IMAGE_VERSION" >> $GITHUB_ENV
