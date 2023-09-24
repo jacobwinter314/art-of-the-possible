@@ -114,3 +114,16 @@ init.sh
 container_name = "tfstate"
 resource_group = "rg-artpossiblest-dev-westus"
 storage_account_name = "startpossiblestdevwestus"
+
+### Pipeline
+
+[1](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+[2](https://stackoverflow.com/questions/64033686/how-can-i-use-private-docker-image-in-github-actions)
+
+ ${{ secrets.DOCKER_CONTAINER_REGISTRY_USER }}
+ ${{ secrets.DOCKER_CONTAINER_REGISTRY_TOKEN }}
+
+ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}

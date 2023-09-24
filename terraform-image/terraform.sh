@@ -1,4 +1,4 @@
-#!/usr/bin/bash bash
+#!/usr/bin/bash
 
 # Cribbed from
 # https://github.com/zenika-open-source/terraform-azure-cli/blob/master/dev.sh
