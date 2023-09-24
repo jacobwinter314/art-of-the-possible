@@ -100,7 +100,7 @@ fi
 
 pipenv sync -d
 
-./terraform-image/terraform.sh fmt ./terraform
+./terraform-image/terraform.sh fmt -recursive ./terraform
 
 pipenv run pre-commit run --all
 

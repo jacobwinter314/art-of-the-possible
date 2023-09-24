@@ -48,6 +48,16 @@ jobs:
           pipenv update -d
           pipenv graph
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        id: format
+        run: terraform fmt -recursive -check ./terraform
+
       - name: Execute Pre-Commit
         run: |
           pipenv run pre-commit run --all
@@ -251,6 +261,10 @@ jobs:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
+      - name: Terraform Format
+        id: format
+        run: terraform fmt -check
+
       - name: Create TFVars
         id: tfvars
         run: |
@@ -260,10 +274,6 @@ jobs:
 
           echo "aks_cluster_name        = \"aks-artpossible-dev-westus\"" >> terraform.tfvars
           echo "aks_resource_group_name = \"rg-artpossible-dev-westus\"" >> terraform.tfvars
-
-      - name: Terraform Format
-        id: format
-        run: terraform fmt -check
 
       - name: Terraform Init
         id: init
