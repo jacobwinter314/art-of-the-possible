@@ -1,14 +1,6 @@
-locals {
-  resource_group_name = "rg-artpossible-dev-westus"
-  cluster_name = "aks-artpossible-dev-westus"
-  acr_host_name = "crartpossibledevwestus.azurecr.io"
-  acr_image_name = "art-of-the-possible"
-  acr_image_tag = "0.5.0.1695566861"
-}
-
 data "azurerm_kubernetes_cluster" "k8s" {
-  name                = local.cluster_name
-  resource_group_name = local.resource_group_name
+  name                = var.aks_cluster_name
+  resource_group_name = var.aks_resource_group_name
 }
 
 provider "kubernetes" {
@@ -29,9 +21,9 @@ provider "kubectl" {
 data "kubectl_path_documents" "deployment" {
     pattern = "./deployment.yaml"
     vars = {
-        host_name = local.acr_host_name
-        image_name = local.acr_image_name
-        image_tag = local.acr_image_tag
+        host_name = var.acr_host_name
+        image_name = var.acr_image_name
+        image_tag = var.acr_image_tag
     }
 }
 
