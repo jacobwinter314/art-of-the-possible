@@ -41,11 +41,11 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   location            = azurerm_resource_group.main_rg.location
   resource_group_name = azurerm_resource_group.main_rg.name
 
-  dns_prefix          = "dns-aks-${local.workload_name}-${local.environment_name}-${local.location}"
+  dns_prefix = "dns-aks-${local.workload_name}-${local.environment_name}-${local.location}"
 
   identity {
-    type = "UserAssigned"
-    user_assigned_identity_id  = azurerm_user_assigned_identity.k8s_identity.id
+    type                      = "UserAssigned"
+    user_assigned_identity_id = azurerm_user_assigned_identity.k8s_identity.id
   }
 
   default_node_pool {
@@ -86,9 +86,9 @@ resource "azurerm_user_assigned_identity" "k8s_identity" {
 }
 
 resource "azurerm_role_assignment" "acr_role" {
-  scope                = module.container-registry.acr_azure_id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_user_assigned_identity.k8s_identity.principal_id
+  scope                            = module.container-registry.acr_azure_id
+  role_definition_name             = "AcrPull"
+  principal_id                     = azurerm_user_assigned_identity.k8s_identity.principal_id
   skip_service_principal_aad_check = true
 }
 
