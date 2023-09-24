@@ -43,9 +43,12 @@ resource "azurerm_kubernetes_cluster" "k8s" {
 
   dns_prefix = "dns-aks-${local.workload_name}-${local.environment_name}-${local.location}"
 
+  # identity {
+  #   type                      = "UserAssigned"
+  #   user_assigned_identity_id = azurerm_user_assigned_identity.k8s_identity.id
+  # }
   identity {
-    type                      = "UserAssigned"
-    user_assigned_identity_id = azurerm_user_assigned_identity.k8s_identity.id
+    type = "SystemAssigned"
   }
 
   default_node_pool {
@@ -75,20 +78,27 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   }
 }
 
-resource "azurerm_user_assigned_identity" "k8s_identity" {
-  name                = "id-${local.workload_name}-${local.environment_name}-${local.location}"
-  location            = azurerm_resource_group.main_rg.location
-  resource_group_name = azurerm_resource_group.main_rg.name
+# resource "azurerm_user_assigned_identity" "k8s_identity" {
+#   name                = "id-${local.workload_name}-${local.environment_name}-${local.location}"
+#   location            = azurerm_resource_group.main_rg.location
+#   resource_group_name = azurerm_resource_group.main_rg.name
 
-  lifecycle {
-    ignore_changes = [tags]
-  }
-}
+#   lifecycle {
+#     ignore_changes = [tags]
+#   }
+# }
 
-resource "azurerm_role_assignment" "acr_role" {
-  scope                            = module.container-registry.acr_azure_id
+# resource "azurerm_role_assignment" "acr_role" {
+#   scope                            = module.container-registry.acr_azure_id
+#   role_definition_name             = "AcrPull"
+#   principal_id                     = azurerm_user_assigned_identity.k8s_identity.principal_id
+#   skip_service_principal_aad_check = true
+# }
+
+resource "azurerm_role_assignment" "example" {
+  principal_id                     = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
   role_definition_name             = "AcrPull"
-  principal_id                     = azurerm_user_assigned_identity.k8s_identity.principal_id
+  scope                            = module.container-registry.acr_azure_id
   skip_service_principal_aad_check = true
 }
 
@@ -106,8 +116,4 @@ output "acr_client_secret" {
   description = "If admin_enabled, the admin password for the ACR."
   value       = module.container-registry.admin_password
   sensitive   = true
-}
-
-output "key_data" {
-  value = jsondecode(azapi_resource_action.ssh_public_key_gen.output).publicKey
 }

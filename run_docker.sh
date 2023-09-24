@@ -9,6 +9,6 @@ if ./run_build_docker.sh ; then
     echo "good build"
 fi
 
-if docker run -it --rm -p 5000:5000 $IMAGE_NAME ; then
+if docker run -it --rm -p 5000:5000 $IMAGE_NAME  ; then
     echo "good run"
 fi
