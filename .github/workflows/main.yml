@@ -212,7 +212,7 @@ jobs:
         with:
           context: .
           tags: ${{ env.DOCKER_IMAGE_NAME }}
-          push: false
+          push: true
           file: Dockerfile
           provenance: false
 
