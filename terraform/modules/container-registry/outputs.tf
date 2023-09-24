@@ -1,4 +1,9 @@
 
+output "acr_azure_id" {
+  description = "Azure Id associated with the ACR."
+  value       = azurerm_container_registry.main_acr.id
+}
+
 output "acr_server_url" {
   description = "Url for the ACR to log in to."
   value       = azurerm_container_registry.main_acr.login_server

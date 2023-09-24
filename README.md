@@ -81,8 +81,10 @@ replace `00000002-0002-0002-0002-000000000002` with subscription id from above
 
 ```bash
 export MSYS_NO_PATHCONV=1
-az ad sp create-for-rbac --name terraform-sp --role Contributor --scopes /subscriptions/00000002-0002-0002-0002-000000000002
+az ad sp create-for-rbac --name tf-provider --role="Owner" --scopes="/subscriptions/00000002-0002-0002-0002-000000000002
 ```
+
+note not Contributor, but Owner... heavy handed, but lost hours
 
 "appId" clientId 00000003-0003-0003-0003-000000000003
 "password" clientSecret
@@ -90,7 +92,7 @@ az ad sp create-for-rbac --name terraform-sp --role Contributor --scopes /subscr
 {
   "appId": "00000003-0003-0003-0003-000000000003",
   "displayName": "terraform-sp",
-  "password": "string", # pragma: allowlist-secret
+  "password": "string",             # pragma: allowlist-secret
   "tenant": "00000001-0001-0001-0001-000000000001"
 }
 

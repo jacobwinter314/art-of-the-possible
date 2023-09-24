@@ -9,9 +9,9 @@ terraform {
 }
 
 resource "azurerm_container_registry" "main_acr" {
-  resource_group_name = var.resource_group_name
-  location            = var.location
   name                = "cr${var.workload_name}${var.environment_name}${var.location}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
 
   admin_enabled                 = var.admin_enabled
   sku                           = var.sku_name
