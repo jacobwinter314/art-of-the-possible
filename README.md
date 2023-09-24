@@ -96,6 +96,9 @@ az ad sp create-for-rbac --name terraform-sp --role Contributor --scopes /subscr
 
 ### Saving This Information For Terraform
 
+For Terraform to be able to use this information, we need to put it somewhere where
+it can be picked up and used.
+
 edit terraform/init_tfvars.sh
 
 NEVER commit
