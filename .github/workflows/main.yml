@@ -182,7 +182,7 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'false'
-          
+
       - name: Checkout Repository
         uses: actions/checkout@v3
 
