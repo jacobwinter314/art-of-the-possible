@@ -58,21 +58,6 @@ jobs:
         id: format
         run: terraform fmt -recursive -check ./terraform
 
-      - name: Terraform Validate - Base
-        working-directory: ./terraform
-        run: |
-          terraform validate -no-color
-
-      - name: Terraform Validate - Deploy
-        working-directory: ./terraform/deploy
-        run: |
-          terraform validate -no-color
-
-      - name: Terraform Validate - Create-State
-        working-directory: ./terraform/create-state
-        run: |
-          terraform validate -no-color
-
       - name: Execute Pre-Commit
         run: |
           pipenv run pre-commit run --all
@@ -151,6 +136,21 @@ jobs:
         id: init
         run: |
           terraform init
+
+      - name: Terraform Validate - Base
+        working-directory: ./terraform
+        run: |
+          terraform validate -no-color
+
+      - name: Terraform Validate - Deploy
+        working-directory: ./terraform/deploy
+        run: |
+          terraform validate -no-color
+
+      - name: Terraform Validate - Create-State
+        working-directory: ./terraform/create-state
+        run: |
+          terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
