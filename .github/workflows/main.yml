@@ -15,7 +15,7 @@ env:
   project-name: flask_server
   default-python-version: 3.8
   TERRAFORM_VERSION: 1.5.7
-  GITHUB_CONTAINER_REGISTRY: ghcr.io
+
   BASE_IMAGE_NAME: art-of-the-possible
   DOCKER_IMAGE_BASE_VERSION: 0.5.0
 
@@ -58,6 +58,21 @@ jobs:
         id: format
         run: terraform fmt -recursive -check ./terraform
 
+      - name: Terraform Validate - Base
+        working-directory: ./terraform
+        run: |
+          terraform validate -no-color
+
+      - name: Terraform Validate - Deploy
+        working-directory: ./terraform/deploy
+        run: |
+          terraform validate -no-color
+
+      - name: Terraform Validate - Create-State
+        working-directory: ./terraform/create-state
+        run: |
+          terraform validate -no-color
+
       - name: Execute Pre-Commit
         run: |
           pipenv run pre-commit run --all
@@ -94,6 +109,15 @@ jobs:
       - name: Execute Tests
         run: pipenv run pytest --cov-fail-under=90 --cov --cov-branch
 
+      # - name: Archive Coverage Results and Test Execution Results
+      #   if: '!cancelled()'
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: my-artifact
+      #     path: |
+      #       ${{ github.workspace }}/report
+      #       ${{ github.workspace }}/data
+
   terraform:
 
     name: 'Terraform'
@@ -123,18 +147,10 @@ jobs:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
-      - name: Terraform Format
-        id: format
-        run: terraform fmt -check
-
       - name: Terraform Init
         id: init
         run: |
           terraform init
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
@@ -261,10 +277,6 @@ jobs:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
 
-      - name: Terraform Format
-        id: format
-        run: terraform fmt -check
-
       - name: Create TFVars
         id: tfvars
         run: |
@@ -279,10 +291,6 @@ jobs:
         id: init
         run: |
           terraform init
-
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
@@ -308,4 +316,19 @@ jobs:
         run: |
           WEBAPP_CLUSTER_IP=$(terraform output -raw webapp_cluster_ip)
 
-          echo "WEBAPP_CLUSTER_IP=$WEBAPP_CLUSTER_IP"
+          echo 'WEBAPP_CLUSTER_IP=$WEBAPP_CLUSTER_IP' >> $GITHUB_STEP_SUMMARY
+
+  completed:
+
+    name: 'Completed Workflow'
+    needs: [deploy-test]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+
+      # Give the workflow a chance to do any final reporting, etc.
+      - name: Completed
+        run: |
+          echo "Workflow completed"

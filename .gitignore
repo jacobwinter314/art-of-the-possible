@@ -14,3 +14,5 @@ terraform/create-state/terraform.tfstate.backup
 terraform/create-state/.terraform/*
 terraform/deploy/.terraform.lock.hcl
 terraform/deploy/.terraform/*
+run_publish_docker.var
+.pre-commit/*
