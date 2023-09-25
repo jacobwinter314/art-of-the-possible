@@ -321,7 +321,7 @@ jobs:
   completed:
 
     name: 'Completed Workflow'
-    needs: [deploy-test]
+    needs: [cluster-deploy]
     runs-on: ubuntu-latest
     defaults:
       run:
