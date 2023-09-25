@@ -311,7 +311,7 @@ jobs:
         run: |
           WEBAPP_CLUSTER_IP=$(terraform output -raw webapp_cluster_ip)
 
-          echo 'WEBAPP_CLUSTER_IP=$WEBAPP_CLUSTER_IP' >> $GITHUB_STEP_SUMMARY
+          echo "WEBAPP_CLUSTER_IP=$WEBAPP_CLUSTER_IP" >> $GITHUB_STEP_SUMMARY
 
   completed:
 
