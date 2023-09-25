@@ -130,8 +130,8 @@ repos:
           - --config
           - clean.json
           - scan
-          - README.md
-          - project_information.md
+          - "*.md"
+          - "./docs/*.md"
 
 #### Dockerfile
 -   repo: https://github.com/hadolint/hadolint
