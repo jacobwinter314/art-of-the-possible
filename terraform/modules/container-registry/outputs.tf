@@ -17,5 +17,5 @@ output "admin_username" {
 output "admin_password" {
   description = "If admin_enabled, the admin password for the ACR."
   value       = azurerm_container_registry.main_acr.admin_password
-  sensitive = true
+  sensitive   = true
 }

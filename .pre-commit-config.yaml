@@ -48,6 +48,9 @@ repos:
     rev: v1.4.0
     hooks:
     -   id: detect-secrets
+        args:
+          - --exclude-files
+          - .*init_tfvars\.sh$
 
 ### Formatters
 
