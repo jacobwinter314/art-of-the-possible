@@ -5,7 +5,7 @@
 set -uo pipefail
 
 start_process() {
-    echo "Initiating local run of Flask server..."
+    echo "Initiating deployment of resources..."
 }
 
 complete_process() {
@@ -21,9 +21,9 @@ complete_process() {
     fi
 
     if [ "$SCRIPT_RETURN_CODE" -ne 0 ]; then
-        echo "Local run of Flask server failed."
+        echo "Deployment of resources failed."
     else
-        echo "Local run of Flask server succeeded."
+        echo "Deployment of resources succeeded."
     fi
 
     if [ -f "$TEMP_FILE" ]; then
@@ -51,39 +51,28 @@ verify_script_prerequisites() {
         echo "Check failed: Docker is not installed on your system."
         echo " Please consult https://docs.docker.com/engine/install/ for installation information."
         echo " When the installation has completed, run this script again."
-        complete_process 1
+        complete_process 1 ""
     fi
 
     if ! which pip > /dev/null ; then
         echo "Check failed: Pip is not installed on your system."
         echo " Please run the command 'sudo apt install python3-pip' and run this script again."
-        complete_process 1
+        complete_process 1 ""
     fi
 
     if ! which pipenv > /dev/null ; then
         echo "Check failed: Pipenv is not installed on your system."
         echo " Please run the command 'sudo apt install pipenv' and run this script again."
-        complete_process 1
-    fi
-}
-
-sync_pipenv() {
-    # If the Pipfile.lock is not found, use pipenv to create it and install any required packages.
-    if [ ! -f "./Pipfile.lock" ]; then
-        pipenv lock
+        complete_process 1 ""
     fi
 
-    # If the Pipfile was changed without using "pipenv install" or "pipenv uninstall", take steps to fix it.
-    if [ "./Pipfile" -nt "./Pipfile.lock" ]; then
-        pipenv --rm
-        pipenv lock
+    if ! "$SCRIPT_DIR"/../terraform-image/terraform.sh version ; then
+        complete_process 1 "Terraform variables have not be initialized in ./terraform/init_tfvars.sh. Please check README.md for instructions."
     fi
-
-    pipenv sync
 }
 
 # Set up any variables that we will need in the script.
-TEMP_FILE=$(mktemp /tmp/run_local.XXXXXXXXX)
+TEMP_FILE=$(mktemp /tmp/deploy_resources.XXXXXXXXX)
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Set this for the script and any subprocesses so we keep the venv in the project.
@@ -97,8 +86,27 @@ verify_script_prerequisites
 # Change the directory into the script's directory, to make things consistent.
 cd "$SCRIPT_DIR" || exit
 
-sync_pipenv
+if ! ../terraform-image/terraform.sh init ; then
+    complete_process 1 "Terraform for deployment of resources was not initialized."
+fi
 
-pipenv run flask --app flask_server run --host 0.0.0.0 --port 5000
+if ! ../terraform-image/terraform.sh apply ; then
+    complete_process 1 "Terraform for deployment of resources was not applied."
+fi
+
+ACR_HOST_NAME=$("$SCRIPT_DIR"/../terraform-image/terraform.sh output -raw acr_server_url)
+ACR_CLIENT_ID=$("$SCRIPT_DIR"/../terraform-image/terraform.sh output -raw acr_client_id)
+ACR_CLIENT_SECRET=$("$SCRIPT_DIR"/../terraform-image/terraform.sh output -raw acr_client_secret)
+
+# Export these variables to allow the run_publish_docker.sh script to know what to publish.
+{
+    echo "# !!! This is a temporary file.  This should never be committed to a repository !!!"
+    echo ""
+    echo "export ACR_HOST_NAME=\"$ACR_HOST_NAME\""
+    echo "export ACR_USERID=\"$ACR_CLIENT_ID\""
+    echo "export ACR_PASSWORD=\"$ACR_CLIENT_SECRET\""
+} > ../depoloy_resources.var
+
+echo "File ./depoloy_resources.var written with values that can be sourced."
 
 complete_process 0 ""

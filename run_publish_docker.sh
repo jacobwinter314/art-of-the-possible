@@ -12,6 +12,10 @@ complete_process() {
     local SCRIPT_RETURN_CODE=$1
     local COMPLETE_REASON=$2
 
+    if [ "$SCRIPT_RETURN_CODE" -ne 0 ]; then
+        echo ""
+    fi
+
     if [ -n "$COMPLETE_REASON" ] ; then
         echo "$COMPLETE_REASON"
     fi
@@ -43,16 +47,19 @@ save_current_directory() {
 }
 
 verify_script_prerequisites() {
-    if [ -z "$ACR_NAME" ] ; then
-        complete_process 1 "Environment variable 'ACR_NAME' is not set.  Please execute [TBD] first."
+    VALUE=${ACR_HOST_NAME:-}
+    if [ -z "$VALUE" ] ; then
+        complete_process 1 "Environment variable 'ACR_HOST_NAME' is not set.  Please execute ./terraform/deploy_resources.sh first."
     fi
 
-    if [ -z "$ACR_USERID" ] ; then
-        complete_process 1 "Environment variable 'ACR_USERID' is not set.  Please execute [TBD] first."
+    VALUE=${ACR_USERID:-}
+    if [ -z "$VALUE" ] ; then
+        complete_process 1 "Environment variable 'ACR_USERID' is not set.  Please execute ./terraform/deploy_resources.sh first."
     fi
 
-    if [ -z "$ACR_PASSWORD" ] ; then
-        complete_process 1 "Environment variable 'ACR_PASSWORD' is not set.  Please execute [TBD] first."
+    VALUE=${ACR_PASSWORD:-}
+    if [ -z "$VALUE" ] ; then
+        complete_process 1 "Environment variable 'ACR_PASSWORD' is not set.  Please execute ./terraform/deploy_resources.sh first."
     fi
 }
 
@@ -80,19 +87,29 @@ if ! ./run_build_docker.sh ; then
     complete_process 1 "Build of Flask server image failed."
 fi
 
-if ! echo "$ACR_PASSWORD" | docker login "$ACR_NAME" --username "$ACR_USERID" --password-stdin ; then
-    complete_process 1 "Login to ACR '$ACR_NAME' failed."
+if ! echo "$ACR_PASSWORD" | docker login "$ACR_HOST_NAME" --username "$ACR_USERID" --password-stdin ; then
+    complete_process 1 "Login to ACR '$ACR_HOST_NAME' failed."
 fi
 
 NEW_IMAGE_VERSION="${DOCKER_IMAGE_BASE_VERSION}.$(date +%s)"
-NEW_IMAGE_NAME="${ACR_NAME}/${BASE_IMAGE_NAME}:${NEW_IMAGE_VERSION}"
+NEW_IMAGE_NAME="${ACR_HOST_NAME}/${BASE_IMAGE_NAME}:${NEW_IMAGE_VERSION}"
 
 if ! docker tag "$IMAGE_NAME" "$NEW_IMAGE_NAME" ; then
     complete_process 1 "Retagging of Flask server image for ACR failed."
 fi
 
 if ! docker push "$NEW_IMAGE_NAME" ; then
-    complete_process 1 "Push of image '$NEW_IMAGE_NAME' to ACR '$ACR_NAME' failed."
+    complete_process 1 "Push of image '$NEW_IMAGE_NAME' to ACR '$ACR_HOST_NAME' failed."
 fi
 
-complete_process 0 "Image '$NEW_IMAGE_NAME' was pushed to ACR '$ACR_NAME'."
+# Export these variables to allow the deploy_to_cluster.sh script to know what to deploy.
+{
+    echo "# !!! This is a temporary file.  This should never be committed to a repository !!!"
+    echo ""
+    echo "export ACR_IMAGE_NAME=\"$BASE_IMAGE_NAME\""
+    echo "export ACR_IMAGE_TAG=\"$NEW_IMAGE_VERSION\""
+} > ./run_publish_docker.var
+
+echo "File ./run_publish_docker.var written with values that can be sourced."
+
+complete_process 0 "Image '$NEW_IMAGE_NAME' was pushed to ACR '$ACR_HOST_NAME'."

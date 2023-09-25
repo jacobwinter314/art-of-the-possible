@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # Cribbed from
 # https://github.com/zenika-open-source/terraform-azure-cli/blob/master/dev.sh
@@ -7,7 +7,6 @@
 set -eo pipefail
 
 save_current_directory() {
-    # echo "Saving current directory prior to execution."
     if ! pushd . >"$TEMP_FILE" 2>&1;  then
         cat "$TEMP_FILE"
         complete_process 1 "Script cannot save the current directory before proceeding."
@@ -30,12 +29,6 @@ complete_process() {
         echo "$COMPLETE_REASON"
     fi
 
-    # if [ "$SCRIPT_RETURN_CODE" -ne 0 ]; then
-    #     echo "Local run of Flask server tests failed." > /dev/null 2>&1
-    # else
-    #     echo "Local run of Flask server tests succeeded." > /dev/null 2>&1
-    # fi
-
     if [ -f "$TEMP_FILE" ]; then
         rm "$TEMP_FILE"
     fi
@@ -56,7 +49,7 @@ build_docker_image_if_required() {
     if docker images | grep "$IMAGE_NAME" > /dev/null 2>&1 ; then
         echo "Image already exists.  No building required." > /dev/null 2>&1
     else
-        echo "Image does not currently exist. Bulding (this may take up to 5 minutes)..."
+        echo "Image does not currently exist. Building (this may take up to 5 minutes)..."
         if ! docker image build --build-arg AZURE_CLI_VERSION="$AZ_VERSION" --build-arg TERRAFORM_VERSION="$TF_VERSION" -t $IMAGE_NAME:$IMAGE_TAG . ; then
             cat "$TEMP_FILE"
             complete_process 1 "Docker image '$IMAGE_NAME:$IMAGE_TAG' failed to build."
@@ -66,20 +59,20 @@ build_docker_image_if_required() {
 
 build_secrets_script() {
     if [ -z "$TF_VAR_arm_client_id" ] ; then
-        complete_process 1 "Environment variable 'TF_VAR_arm_client_id' is not set.  Please source ./terraform/init_tfvars.sh"
+        complete_process 1 "Environment variable 'TF_VAR_arm_client_id' is not set.  Please verify and source ./terraform/init_tfvars.sh"
     fi
     if [ -z "$TF_VAR_arm_client_secret" ] ; then
-        complete_process 1 "Environment variable 'TF_VAR_arm_client_secret' is not set.  Please source ./terraform/init_tfvars.sh"
+        complete_process 1 "Environment variable 'TF_VAR_arm_client_secret' is not set.  Please verify and source ./terraform/init_tfvars.sh"
     fi
     if [ -z "$TF_VAR_arm_subscription_id" ] ; then
-        complete_process 1 "Environment variable 'TF_VAR_arm_subscription_id' is not set.  Please source ./terraform/init_tfvars.sh"
+        complete_process 1 "Environment variable 'TF_VAR_arm_subscription_id' is not set.  Please verify and source ./terraform/init_tfvars.sh"
     fi
     if [ -z "$TF_VAR_arm_tenant_id" ] ; then
-        complete_process 1 "Environment variable 'TF_VAR_arm_tenant_id' is not set.  Please source ./terraform/init_tfvars.sh"
+        complete_process 1 "Environment variable 'TF_VAR_arm_tenant_id' is not set.  Please verify and source ./terraform/init_tfvars.sh"
     fi
 
     {
-        echo "# !!! This is a temporary file.  This should never be committed to a repository!!!"
+        echo "# !!! This is a temporary file.  This should never be committed to a repository !!!"
         echo ""
         echo "export ARM_CLIENT_ID=\"$TF_VAR_arm_client_id\" "
         echo "export ARM_CLIENT_SECRET=\"$TF_VAR_arm_client_secret\" "
@@ -106,11 +99,8 @@ restore_current_directory
 
 build_secrets_script
 
-if docker run -it --rm -v "$PWD:$PWD" -w "$PWD" zenika/terraform-azure-cli:dev bash -c "source ./$TEMP_VARS_FILE ;  terraform $*" ; then
-    echo "Terraform command succeeded."
-else
-    echo "Terraform command failed."
-    complete_process 1
+if ! docker run -it --rm -v "$PWD:$PWD" -w "$PWD" zenika/terraform-azure-cli:dev bash -c "source ./$TEMP_VARS_FILE ;  terraform $*" ; then
+    complete_process 1 "Terraform command failed."
 fi
 
 # cleanup

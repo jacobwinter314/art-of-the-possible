@@ -1,0 +1,12 @@
+# These files are text and should be normalized (Convert crlf => lf)
+*.yml text
+*.yaml text
+*.json text
+*.sh text
+
+# These files are binary and should be left untouched
+# (binary is a macro for -text -diff)
+*.png binary
+
+# Auto detect text files and perform LF normalization
+* text=auto
