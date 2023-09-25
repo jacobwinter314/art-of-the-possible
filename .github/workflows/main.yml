@@ -142,16 +142,6 @@ jobs:
         run: |
           terraform validate -no-color
 
-      - name: Terraform Validate - Deploy
-        working-directory: ./terraform/deploy
-        run: |
-          terraform validate -no-color
-
-      - name: Terraform Validate - Create-State
-        working-directory: ./terraform/create-state
-        run: |
-          terraform validate -no-color
-
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
@@ -291,6 +281,11 @@ jobs:
         id: init
         run: |
           terraform init
+
+      - name: Terraform Validate - Deploy
+        working-directory: ./terraform/deploy
+        run: |
+          terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
