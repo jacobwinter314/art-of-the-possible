@@ -23,7 +23,7 @@ def create_app() -> Flask:
         Respond to a request at the base route for the server.
         """
         response_dictionary = {
-            "message": "Automate all the things!",
+            "message": "Automate all the things!!",
             "timestamp": int(time.time()),
         }
         return make_response(jsonify(response_dictionary), 200)
